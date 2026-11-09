@@ -6,6 +6,8 @@ SYNTHETIC_PERIODS = {
     "2026-W24": {"required": 12, "planned": 10, "missing_lead": True},
     "2026-W25": {"required": 10, "planned": 9, "missing_lead": False},
     "2026-W26": {"required": 9, "planned": 9, "missing_lead": False},
+    # The capacity playbook is available for this period, but the coverage feed has not arrived.
+    "2026-W27": {"required": 11},
 }
 
 
@@ -17,6 +19,30 @@ def get_capacity_risk(period: str) -> CapacityRisk:
     except KeyError as error:
         supported = ", ".join(sorted(SYNTHETIC_PERIODS))
         raise ValueError(f"Unknown period '{period}'. Supported periods: {supported}.") from error
+
+    missing_inputs = [field for field in ("planned", "missing_lead") if field not in data]
+    if missing_inputs:
+        readable_inputs = {
+            "planned": "planned coverage",
+            "missing_lead": "required lead-role status",
+        }
+        return CapacityRisk(
+            period=period,
+            required_positions=data.get("required"),
+            risk_level="unknown",
+            requires_human_review=True,
+            evidence_status="insufficient",
+            missing_inputs=[readable_inputs[field] for field in missing_inputs],
+            rationale=(
+                "The capacity-risk playbook was found, but the available operational data is "
+                "not sufficient to apply it safely. No risk level or staffing recommendation "
+                "was produced."
+            ),
+            next_action=(
+                "Provide planned coverage and required lead-role status for this period, then "
+                "recalculate the read-only risk summary."
+            ),
+        )
 
     uncovered = max(data["required"] - data["planned"], 0)
     if uncovered >= 2 or data["missing_lead"]:
@@ -36,5 +62,10 @@ def get_capacity_risk(period: str) -> CapacityRisk:
         rationale=(
             "Synthetic capacity calculation. A human must review any medium or high risk before a "
             "plan changes."
+        ),
+        next_action=(
+            "Review the result with a human planner before changing an operational plan."
+            if level in {"medium", "high"}
+            else "No operational change is proposed by this read-only tool."
         ),
     )

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -16,12 +18,15 @@ class SearchRequest(BaseModel):
 
 class CapacityRisk(BaseModel):
     period: str
-    required_positions: int
-    planned_coverage: int
-    uncovered_positions: int
-    risk_level: str
+    required_positions: int | None = None
+    planned_coverage: int | None = None
+    uncovered_positions: int | None = None
+    risk_level: Literal["low", "medium", "high", "unknown"]
     requires_human_review: bool
     rationale: str
+    evidence_status: Literal["sufficient", "insufficient"] = "sufficient"
+    missing_inputs: list[str] = Field(default_factory=list)
+    next_action: str
 
 
 class CapacityRiskRequest(BaseModel):

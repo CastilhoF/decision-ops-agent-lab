@@ -17,3 +17,16 @@ async def test_mcp_server_exposes_and_runs_read_only_tool() -> None:
         result = await client.call_tool("get_capacity_risk", {"period": "2026-W24"})
 
     assert result.structured_content["risk_level"] == "high"
+
+
+@pytest.mark.asyncio
+async def test_mcp_reports_insufficient_evidence_without_calculating_risk() -> None:
+    async with Client(server, raise_exceptions=True) as client:
+        result = await client.call_tool("get_capacity_risk", {"period": "2026-W27"})
+
+    assert result.structured_content["evidence_status"] == "insufficient"
+    assert result.structured_content["risk_level"] == "unknown"
+    assert result.structured_content["missing_inputs"] == [
+        "planned coverage",
+        "required lead-role status",
+    ]

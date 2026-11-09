@@ -22,6 +22,16 @@ def test_capacity_endpoint_calculates_risk() -> None:
     assert response.json()["risk_level"] == "high"
 
 
+def test_capacity_endpoint_reports_missing_evidence_without_guessing() -> None:
+    response = client.post("/v1/tools/capacity-risk", json={"period": "2026-W27"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["evidence_status"] == "insufficient"
+    assert payload["risk_level"] == "unknown"
+    assert payload["missing_inputs"] == ["planned coverage", "required lead-role status"]
+
+
 def test_agent_endpoint_requires_explicit_key() -> None:
     response = client.post(
         "/v1/agent/recommendations",

@@ -23,8 +23,8 @@ def search_operational_knowledge(query: str, limit: int = 3) -> list[dict[str, s
 
 
 @server.tool()
-def get_capacity_risk(period: str) -> dict[str, str | int | bool]:
-    """Calculate a read-only capacity risk for a synthetic planning period."""
+def get_capacity_risk(period: str) -> dict[str, object]:
+    """Calculate a read-only risk, or report missing evidence without guessing."""
 
     return calculate_capacity_risk(period).model_dump()
 

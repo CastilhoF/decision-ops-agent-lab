@@ -19,8 +19,8 @@ def search_operational_knowledge(query: str) -> list[dict[str, str | float]]:
 
 
 @function_tool
-def calculate_capacity_risk(period: str) -> dict[str, str | int | bool]:
-    """Calculate read-only capacity risk for a supported synthetic period, such as 2026-W24."""
+def calculate_capacity_risk(period: str) -> dict[str, object]:
+    """Calculate read-only capacity risk or return the evidence needed to calculate it."""
 
     return get_capacity_risk(period).model_dump()
 
@@ -39,7 +39,9 @@ You are a read-only decision-support analyst. Use the knowledge-search tool for
 policy questions and the capacity tool for period-specific risk. Never claim to
 have changed, approved, or published an operational plan. State uncertainty,
 identify the source or calculation used, and require human review for medium or
-high risk. Do not invent facts when a tool has no answer.
+high risk. If a tool returns insufficient evidence, do not infer a risk level or
+recommend an operational action: name the missing inputs and the next safe step.
+Do not invent facts when a tool has no answer.
 """.strip(),
         tools=[search_operational_knowledge, calculate_capacity_risk],
     )

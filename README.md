@@ -77,6 +77,18 @@ curl -X POST http://localhost:8030/v1/tools/capacity-risk \
   -d '{"period":"2026-W24"}'
 ```
 
+### Observe safe abstention when evidence is missing
+
+The synthetic period `2026-W27` has an applicable capacity policy but intentionally lacks the
+operational coverage data needed to calculate a risk. The tool returns `evidence_status` as
+`insufficient`, lists the missing inputs, and uses `risk_level: "unknown"` rather than guessing:
+
+```bash
+curl -X POST http://localhost:8030/v1/tools/capacity-risk \
+  -H 'content-type: application/json' \
+  -d '{"period":"2026-W27"}'
+```
+
 ### Enable the LLM agent
 
 Set `OPENAI_API_KEY` in `.env`. The agent endpoint then combines RAG evidence and function tools into a recommendation:
@@ -126,6 +138,8 @@ ruff format --check src tests
 - RAG is retrieval, not training or durable model memory.
 - MCP is a protocol for exposing context and tools; it is not an agent framework.
 - An LLM is probabilistic. Capacity calculations and write permissions stay in typed, testable code.
+- A known policy does not make incomplete operational evidence safe to use. The tool must identify
+  missing inputs and abstain from a recommendation when it cannot apply the rule.
 - This project returns recommendations only. Any action that could change an operational plan must remain behind explicit human approval.
 
 ## License
