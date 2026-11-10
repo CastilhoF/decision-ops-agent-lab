@@ -89,6 +89,19 @@ curl -X POST http://localhost:8030/v1/tools/capacity-risk \
   -d '{"period":"2026-W27"}'
 ```
 
+When the missing facts arrive, send them in a new read-only request. The tool recalculates from the
+complete evidence, marks the response as `analysis_status: "revised"`, and no longer lists the
+resolved fields as missing:
+
+```bash
+curl -X POST http://localhost:8030/v1/tools/capacity-risk \
+  -H 'content-type: application/json' \
+  -d '{"period":"2026-W27","evidence":{"planned_coverage":11,"required_lead_present":true}}'
+```
+
+The supplement is not persisted. A subsequent request without it remains insufficient, which keeps
+the example reproducible and avoids carrying unverified conversation state into another calculation.
+
 ### Enable the LLM agent
 
 Set `OPENAI_API_KEY` in `.env`. The agent endpoint then combines RAG evidence and function tools into a recommendation:

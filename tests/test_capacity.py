@@ -1,5 +1,6 @@
 import pytest
 
+from decision_ops.domain.models import CapacityEvidence
 from decision_ops.services.capacity import get_capacity_risk
 
 
@@ -27,6 +28,26 @@ def test_missing_operational_data_returns_safe_non_recommendation() -> None:
     assert risk.missing_inputs == ["planned coverage", "required lead-role status"]
     assert "No risk level" in risk.rationale
     assert "Provide planned coverage" in risk.next_action
+
+
+def test_complete_evidence_revises_previously_incomplete_analysis() -> None:
+    first_result = get_capacity_risk("2026-W27")
+    revised_result = get_capacity_risk(
+        "2026-W27",
+        CapacityEvidence(planned_coverage=11, required_lead_present=True),
+    )
+
+    assert first_result.evidence_status == "insufficient"
+    assert revised_result.evidence_status == "sufficient"
+    assert revised_result.analysis_status == "revised"
+    assert revised_result.risk_level == "low"
+    assert revised_result.missing_inputs == []
+    assert revised_result.applied_inputs == [
+        "planned coverage",
+        "required lead-role status",
+    ]
+    assert "Provide planned coverage" not in revised_result.next_action
+    assert get_capacity_risk("2026-W27").evidence_status == "insufficient"
 
 
 def test_unknown_period_has_explanatory_error() -> None:

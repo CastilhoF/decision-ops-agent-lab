@@ -42,7 +42,7 @@ def search_knowledge(request: SearchRequest) -> list[KnowledgeChunk]:
 @app.post("/v1/tools/capacity-risk", response_model=CapacityRisk)
 def capacity_risk(request: CapacityRiskRequest) -> CapacityRisk:
     try:
-        return get_capacity_risk(request.period)
+        return get_capacity_risk(request.period, request.evidence)
     except ValueError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 

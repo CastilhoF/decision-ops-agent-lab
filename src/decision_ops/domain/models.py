@@ -26,11 +26,21 @@ class CapacityRisk(BaseModel):
     rationale: str
     evidence_status: Literal["sufficient", "insufficient"] = "sufficient"
     missing_inputs: list[str] = Field(default_factory=list)
+    analysis_status: Literal["initial", "revised"] = "initial"
+    applied_inputs: list[str] = Field(default_factory=list)
     next_action: str
+
+
+class CapacityEvidence(BaseModel):
+    """Supplemental, caller-provided facts for one read-only calculation."""
+
+    planned_coverage: int = Field(ge=0)
+    required_lead_present: bool
 
 
 class CapacityRiskRequest(BaseModel):
     period: str = Field(pattern=r"^\d{4}-W\d{2}$")
+    evidence: CapacityEvidence | None = None
 
 
 class AgentQuestion(BaseModel):

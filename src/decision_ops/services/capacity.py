@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from decision_ops.domain.models import CapacityRisk
+from decision_ops.domain.models import CapacityEvidence, CapacityRisk
 
 SYNTHETIC_PERIODS = {
     "2026-W24": {"required": 12, "planned": 10, "missing_lead": True},
@@ -11,14 +11,21 @@ SYNTHETIC_PERIODS = {
 }
 
 
-def get_capacity_risk(period: str) -> CapacityRisk:
-    """Calculate a read-only capacity-risk summary for synthetic planning data."""
+def get_capacity_risk(period: str, evidence: CapacityEvidence | None = None) -> CapacityRisk:
+    """Calculate a read-only risk using base facts plus an optional evidence supplement."""
 
     try:
         data = SYNTHETIC_PERIODS[period]
     except KeyError as error:
         supported = ", ".join(sorted(SYNTHETIC_PERIODS))
         raise ValueError(f"Unknown period '{period}'. Supported periods: {supported}.") from error
+
+    data = data.copy()
+    applied_inputs: list[str] = []
+    if evidence:
+        data["planned"] = evidence.planned_coverage
+        data["missing_lead"] = not evidence.required_lead_present
+        applied_inputs = ["planned coverage", "required lead-role status"]
 
     missing_inputs = [field for field in ("planned", "missing_lead") if field not in data]
     if missing_inputs:
@@ -63,6 +70,8 @@ def get_capacity_risk(period: str) -> CapacityRisk:
             "Synthetic capacity calculation. A human must review any medium or high risk before a "
             "plan changes."
         ),
+        analysis_status="revised" if evidence else "initial",
+        applied_inputs=applied_inputs,
         next_action=(
             "Review the result with a human planner before changing an operational plan."
             if level in {"medium", "high"}

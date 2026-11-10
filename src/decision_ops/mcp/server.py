@@ -4,6 +4,7 @@ from pathlib import Path
 
 from mcp.server import MCPServer
 
+from decision_ops.domain.models import CapacityEvidence
 from decision_ops.rag.retriever import LexicalRetriever
 from decision_ops.services.capacity import get_capacity_risk as calculate_capacity_risk
 from decision_ops.settings import get_settings
@@ -23,10 +24,34 @@ def search_operational_knowledge(query: str, limit: int = 3) -> list[dict[str, s
 
 
 @server.tool()
-def get_capacity_risk(period: str) -> dict[str, object]:
-    """Calculate a read-only risk, or report missing evidence without guessing."""
+def get_capacity_risk(
+    period: str,
+    planned_coverage: int | None = None,
+    required_lead_present: bool | None = None,
+) -> dict[str, object]:
+    """Calculate risk or revise an incomplete result with both requested inputs.
 
-    return calculate_capacity_risk(period).model_dump()
+    Supply both planned_coverage and required_lead_present only after the tool reports
+    insufficient evidence. The tool recalculates without persisting caller data.
+    """
+
+    values = (planned_coverage, required_lead_present)
+    has_partial_evidence = any(value is not None for value in values) and not all(
+        value is not None for value in values
+    )
+    if has_partial_evidence:
+        raise ValueError(
+            "Provide both planned_coverage and required_lead_present when supplementing evidence."
+        )
+    evidence = (
+        CapacityEvidence(
+            planned_coverage=planned_coverage,
+            required_lead_present=required_lead_present,
+        )
+        if all(value is not None for value in values)
+        else None
+    )
+    return calculate_capacity_risk(period, evidence).model_dump()
 
 
 @server.resource("policy://approval")
